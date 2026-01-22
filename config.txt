@@ -1,0 +1,8 @@
+# -------- Google Sheet Config --------
+GOOGLE_SHEET_NAME=whatsapp-sheet-bot
+CREDENTIALS_FILE=credentials.json
+
+# -------- WAHA WhatsApp Config --------
+WAHA_URL=http://localhost:3000
+WAHA_API_KEY=6b051d82b4bf4290a6717b6292655d20
+SESSION=default
