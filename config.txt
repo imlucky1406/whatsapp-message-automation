@@ -6,3 +6,10 @@ CREDENTIALS_FILE=credentials.json
 WAHA_URL=http://localhost:3000
 WAHA_API_KEY=6b051d82b4bf4290a6717b6292655d20
 SESSION=default
+
+# -------- Country-code / DELAY --------
+COUNTRY_CODE=91
+
+# -------- GET-chatId / LIMIT--------
+OWNER_CHATID=919016772742@c.us
+LIMIT=5

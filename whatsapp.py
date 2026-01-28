@@ -26,8 +26,11 @@ GOOGLE_SHEET_NAME = config["GOOGLE_SHEET_NAME"]
 WAHA_URL = config["WAHA_URL"]
 WAHA_API_KEY = config["WAHA_API_KEY"]
 SESSION = config["SESSION"]
+OWNER_CHATID = config["OWNER_CHATID"]
+limit = config["LIMIT"]
 
-COUNTRY_CODE = 91
+
+COUNTRY_CODE = config["COUNTRY_CODE"]
 DELAY_SECONDS = 5
 
 
@@ -58,7 +61,14 @@ client = gspread.authorize(creds)
 sheet = client.open(GOOGLE_SHEET_NAME).sheet1
 rows = sheet.get_all_values()
 
-# --------- send text-----
+# --------- header -----
+WAHA_HEADERS = {
+    "X-Api-Key": WAHA_API_KEY,
+    "Content-Type": "application/json"
+}
+
+
+# --------- send text -----
 def send_text(chat_id, text):
     response = requests.post(
         f"{WAHA_URL}/api/sendText",
@@ -67,13 +77,71 @@ def send_text(chat_id, text):
             "chatId": chat_id,
             "text": text
         },
-        headers={
-            "X-Api-Key": WAHA_API_KEY,
-            "Content-Type": "application/json"
+        headers=WAHA_HEADERS,
+        timeout=30
+    )
+    response.raise_for_status()
+
+
+
+#--------- forward one msg -----
+def forward_message(target_chat_id, message_id):
+    response = requests.post(
+        f"{WAHA_URL}/api/forwardMessage",
+        headers=WAHA_HEADERS,
+        json={
+            "session": SESSION,
+            "chatId": target_chat_id,
+            "messageId": message_id
         },
         timeout=30
     )
     response.raise_for_status()
+
+#--------- get last msgs -----
+def get_last_messages(chat_id, limit=5):
+    url = f"{WAHA_URL}/api/{SESSION}/chats/{chat_id}/messages"
+
+    params = {
+        "limit": limit,
+        "sortOrder": "desc",      # newest first
+        "downloadMedia": False    # faster, still forwards media
+    }
+
+    response = requests.get(
+        url,
+        headers=WAHA_HEADERS,
+        params=params,
+        timeout=30
+    )
+    response.raise_for_status()
+
+    return response.json()
+
+
+
+#--------- forward last msg -----
+def forward_last_messages(owner_chat_id, target_chat_id, count=5):
+    messages = get_last_messages(owner_chat_id, limit=count)
+
+    if not messages:
+        print("⚠ No messages to forward")
+        return
+
+    # Reverse so order stays same as WhatsApp (old → new)
+    messages = list(reversed(messages))
+
+    for msg in messages:
+        msg_id = msg.get("id")
+        msg_type = msg.get("type")
+
+        if not msg_id:
+            continue
+
+        print(f"➡ Forwarding {msg_type} message")
+        forward_message(target_chat_id, msg_id)
+        time.sleep(2)   # avoid spam / rate limit
+
 
 #--------- send pdf -----
 def send_pdf(chat_id, pdf_url):
@@ -85,10 +153,7 @@ def send_pdf(chat_id, pdf_url):
             "url": pdf_url,
             "filename": "Document.pdf"
         },
-        headers={
-            "X-Api-Key": WAHA_API_KEY,
-            "Content-Type": "application/json"
-        },
+        headers=WAHA_HEADERS,
         timeout=30
     )
     response.raise_for_status()
@@ -118,12 +183,21 @@ for i in range(1, len(rows)):
         # send_pdf(chat_id, pdf_link)
         # time.sleep(DELAY_SECONDS)
 
+        print(f"📤 Forwarding last 5 messages to {chat_id}")
+
+        forward_last_messages(
+            OWNER_CHATID,
+            chat_id,
+            count=5
+        )
+
+
         sheet.update_cell(i + 1, 5, "sent")
         print("Sent successfully")
 
     except Exception as error:
         sheet.update_cell(i + 1, 5, "failed")
         print("Failed:", error)
-
-# ==============================
+        
 print("Script completed")
+
