@@ -178,12 +178,12 @@ for i in range(1, len(rows)):
         # send_pdf(chat_id, pdf_link)
         # time.sleep(DELAY_SECONDS)
 
-        print(f"📤 Forwarding last 5 messages to {chat_id}")
+        print(f"📤 Forwarding last {limit} messages to {chat_id}")
 
         forward_last_messages(
             OWNER_CHATID,
             chat_id,
-            count=5
+            count=limit
         )
 
         sheet.update_cell(i + 1, 5, "sent")
