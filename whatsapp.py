@@ -41,16 +41,11 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+credentials_path = os.path.join(BASE_DIR, "credentials.json")
 
-if not credentials_path:
-    raise Exception(
-        "GOOGLE_APPLICATION_CREDENTIALS not set.\n"
-        "Windows:\n"
-        "  setx GOOGLE_APPLICATION_CREDENTIALS \"C:\\Users\\lucky\\secrets\\credentials.json\"\n"
-        "Linux/Mac:\n"
-        "  export GOOGLE_APPLICATION_CREDENTIALS=\"/path/to/credentials.json\""
-    )
+if not os.path.exists(credentials_path):
+    raise Exception(f"credentials.json not found at {credentials_path}")
 
 creds = service_account.Credentials.from_service_account_file(
     credentials_path,
@@ -140,7 +135,7 @@ def forward_last_messages(owner_chat_id, target_chat_id, count=5):
 
         print(f"➡ Forwarding {msg_type} message")
         forward_message(target_chat_id, msg_id)
-        time.sleep(2)   # avoid spam / rate limit
+        time.sleep(1)   # avoid spam / rate limit
 
 
 #--------- send pdf -----
@@ -191,7 +186,6 @@ for i in range(1, len(rows)):
             count=5
         )
 
-
         sheet.update_cell(i + 1, 5, "sent")
         print("Sent successfully")
 
@@ -200,4 +194,3 @@ for i in range(1, len(rows)):
         print("Failed:", error)
         
 print("Script completed")
-
