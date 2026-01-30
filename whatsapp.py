@@ -116,7 +116,7 @@ def get_last_messages(chat_id, limit=5):
 
 
 #--------- forward last msg -----
-def forward_last_messages(owner_chat_id, target_chat_id, count=5):
+def forward_last_messages(owner_chat_id, target_chat_id, count):
     messages = get_last_messages(owner_chat_id, limit=count)
 
     if not messages:
